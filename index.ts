@@ -122,7 +122,20 @@ export class ExpriesCache {
 
   // 拼接key(api+参数+headers)
   static _initKey(params: TCacheMethodReq) {
-    return `${this.cacheName}/${JSON.stringify(params)}`
+    const _handleSort = (obj: any):any => {
+      if (typeof obj !== 'object' || obj === null) return obj
+      if (Array.isArray(obj)) {
+        return obj.map(_handleSort)
+      }
+      return Object.keys(obj)
+        .sort()
+        .reduce((sortedObj: Indexable, key) => {
+          sortedObj[key] = _handleSort(obj[key])
+          return sortedObj
+        }, {})
+    }
+    const sortedParams = _handleSort(params)
+    return `${this.cacheName}/${JSON.stringify(sortedParams)}`
   }
 
   // 判断是否缓存条件
@@ -183,18 +196,17 @@ export class ExpriesCache {
 
   /** 存储数据 */
   static async set(params: TCacheMethodReq, data: any) {
-    const cacheOption = this.cacheApis[params.api]
     if (!this._isCache(params)) return false // 判断缓存条件
-
     if (!data) return false // 数据有误return(暂不考虑数据false等情况)
+
+    const cacheOption = this.cacheApis[params.api]
+    const _cacheType = cacheOption.cacheType
+    const cacheKey = this._initKey(params)
 
     const value = {
       data, // 缓存数据
       createTime: new Date().getTime(), // 缓存时间(毫秒)
     }
-
-    const _cacheType = cacheOption.cacheType
-    const cacheKey = this._initKey(params)
 
     this.syncMap && this.cacheMap.set(cacheKey, value) // 存入map(开启syncMap时)
 
@@ -211,9 +223,8 @@ export class ExpriesCache {
   /** 清除所有缓存 */
   static clear() {
     this.cacheMap.clear()
-    Object.keys(this.cacheDriver).forEach((key) => {
-      // @ts-ignore
-      this.cacheDriver[key].clear()
+    Object.values(this.cacheDriver).forEach((driver) => {
+      driver.clear()
     })
   }
 }

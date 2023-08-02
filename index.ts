@@ -122,6 +122,7 @@ export class ExpriesCache {
 
   // 拼接key(api+参数+headers)
   static _initKey(params: TCacheMethodReq) {
+    // 参数进行排序
     const _handleSort = (obj: any):any => {
       if (typeof obj !== 'object' || obj === null) return obj
       if (Array.isArray(obj)) {

@@ -43,6 +43,6 @@ export declare class ExpriesCache {
     static _isOut(time: number, createTime: number): boolean;
     static get<T = any>(params: TCacheMethodReq): Promise<T | false>;
     static set(params: TCacheMethodReq, data: any): Promise<false | undefined>;
-    static clear(): void;
+    static clear(): Promise<void>;
 }
 export {};

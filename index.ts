@@ -71,7 +71,9 @@ export class ExpriesCache {
         sessionStorage.removeItem(key)
       },
       clear: async () => {
-        this.clearStorage(sessionStorage, sessionStorage.removeItem)
+        this.clearStorage(sessionStorage, (key: string) => {
+          sessionStorage.removeItem(key)
+        })
       },
     },
     memory: {
@@ -112,18 +114,22 @@ export class ExpriesCache {
 
   /** 遍历删除缓存数据(依据前缀,适用webStorage) */
   static clearStorage(storage: Storage, removeFn: (key: string) => void) {
+    const _waitDeleteKeys = []
     for (let i = 0; i < storage.length; i++) {
       const key = storage.key(i)
       if (key && key.startsWith(this.cacheName)) {
-        removeFn(key)
+        _waitDeleteKeys.push(key)
       }
     }
+    _waitDeleteKeys.forEach((key) => {
+      removeFn(key)
+    })
   }
 
   // 拼接key(api+参数+headers)
   static _initKey(params: TCacheMethodReq) {
     // 参数进行排序
-    const _handleSort = (obj: any):any => {
+    const _handleSort = (obj: any): any => {
       if (typeof obj !== 'object' || obj === null) return obj
       if (Array.isArray(obj)) {
         return obj.map(_handleSort)
@@ -222,10 +228,10 @@ export class ExpriesCache {
   }
 
   /** 清除所有缓存 */
-  static clear() {
+  static async clear() {
     this.cacheMap.clear()
-    Object.values(this.cacheDriver).forEach((driver) => {
-      driver.clear()
+    Object.values(this.cacheDriver).forEach(async (driver) => {
+      await driver.clear()
     })
   }
 }
